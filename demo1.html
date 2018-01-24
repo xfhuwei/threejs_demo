@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- 移动相机的位置-->
+    <meta charset="UTF-8">
+    <title>方体旋转</title>
+    <script src="https://cdn.bootcss.com/three.js/r83/three.min.js"></script>
+    <script src="js/Stats.js"></script>
+    <script src="js/Tween.js"></script>
+
+    <style type="text/css">
+        div#canvas-frame {
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            height: 600px;
+            background-color: #EEEEEE;
+        }
+
+    </style>
+    <script>
+        /*
+         * 围绕某个 x,y,z轴测试
+         */
+
+
+        var renderer; // 渲染器
+        var stats;  // 性能监视器
+
+        function initThree() {
+            width = document.getElementById('canvas-frame').clientWidth; // 获取div宽
+            height = document.getElementById('canvas-frame').clientHeight; // 获取div高
+            renderer = new THREE.WebGLRenderer({ // 实例化webgl渲染器
+                antialias : true
+            });
+            renderer.setSize(width, height); // 设定宽高
+            document.getElementById('canvas-frame').appendChild(renderer.domElement); // 插入dom
+            renderer.setClearColor(0xFFFFFF, 1.0); // 清除颜色
+
+            stats = new Stats(); // 实例化监视器
+            // 监视器显示元素定位
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+            document.getElementById('canvas-frame').appendChild(stats.domElement); // 插入dom
+        }
+
+        var camera; // 相机
+        function initCamera() {
+            camera = new THREE.PerspectiveCamera(45, width / height, 1, 10000); // 实例化透视相机
+            // 相机位置
+            camera.position.x = 100;
+            camera.position.y = 300;
+            camera.position.z = 600;
+            // 相机以哪个方向为上方
+            camera.up.x = 0;
+            camera.up.y = 1;
+            camera.up.z = 0;
+            // 相机看向哪个点
+            camera.lookAt({
+                x : 0,
+                y : 0,
+                z : 0
+            });
+        }
+
+        var scene; // 场景
+        function initScene() {
+            scene = new THREE.Scene(); // 实例化一个场景
+        }
+
+        var light; // 灯光
+        function initLight() {
+            light = new THREE.AmbientLight(0xFF0000); // 实例化环境光
+            light.position.set(100, 100, 200); // 光源位置？
+            scene.add(light); // 将灯光加入场景
+
+        }
+
+        var cube;
+        var mesh; // 网格物体
+        function initObject() {
+
+            var geometry = new THREE.BoxGeometry( 100, 100, 100 ); // 实例化一个矩形
+
+            // geometry中有一个face成员，用来存储这个Geometry包含的面。每个面(face)有一个color属性，表示这个面的颜色。
+            for ( var i = 0; i < geometry.faces.length; i += 2 ) { // 给每一面上色 每个三角形是一个面
+
+                var hex = Math.random() * 0xffffff;
+                geometry.faces[ i ].color.setHex( hex );
+                geometry.faces[ i + 1 ].color.setHex( hex );
+
+            }
+
+            var material = new THREE.MeshBasicMaterial( { vertexColors: THREE.FaceColors} ); // 实例化颜色材质
+            mesh = new THREE.Mesh( geometry,material); // 实例化网格物体
+            mesh.position = new THREE.Vector3(0,0,0); // 物体位置
+            scene.add(mesh); // 将物体放入场景
+
+
+        }
+
+        function initGrid(){
+            var helper = new THREE.GridHelper( 1000, 50, 0x0000ff, 0x808080 ); // 实例化网格1000 每小格50 网格颜色
+            scene.add( helper ); // 将网格放入场景中
+        }
+
+        function threeStart() { // 函数汇总
+            initThree();
+            initCamera();
+            initScene();
+            initLight();
+            initObject();
+            initGrid();
+
+            animation();
+
+        }
+
+        function animation()
+        {
+            // 可用 rotation.x 或 rotateX() 选择物体
+            // mesh.rotation.x +=0.01;
+            mesh.rotateZ(-0.01); // pi = 3.14115926
+            renderer.render(scene, camera);
+            stats.update();
+            requestAnimationFrame(animation);
+        }
+
+    </script>
+</head>
+
+<body onload="threeStart();">
+<div style="margin-left:150px;">
+    <p>围绕Y轴旋转 方法一：mesh.rotation.y +=0.01;</p>
+    <p>方法二：mesh.rotateY(0.1)</p>
+</div>
+<div id="canvas-frame"></div>
+</body>
+</html>

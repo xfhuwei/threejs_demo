@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>给立方体贴图</title>
+    <style>
+        div#canvas-frame {
+            border: none;
+            background-color: #eee;
+            width: 100%;
+            height: 666px;
+        }
+    </style>
+</head>
+
+<body>
+<h2 id="message"></h2>
+<div id="canvas-frame"></div>
+
+<script src="https://cdn.bootcss.com/three.js/r83/three.min.js"></script>
+<script src="js/OrbitControls.js"></script>
+<script>
+    // 加载需要的贴图，返回textures数组
+    function loadTextures(textureURLs, callback) {
+        var loaded = 0;
+
+        function loadedOne() {
+            loaded++;
+            if (callback && loaded == textureURLs.length) {
+                //   for (var i = 0; i < textureURLs; i++) {
+                //     textures[i].needsUpdate = true;
+                //   }
+                callback(); // 加载完成更新视图
+            }
+        }
+        var textures = [];
+        for (var i = 0; i < textureURLs.length; i++) {
+            var tex = new THREE.TextureLoader().load(textureURLs[i], loadedOne); // 加载
+            textures.push(tex);
+        }
+        return textures;
+    }
+
+    // 监听事件更新视图。
+    function setupDragAction(element, dragAction) {
+        function move() {
+            dragAction();
+        }
+
+        function down() {
+            document.addEventListener("mousemove", move, false);
+        }
+
+        function up() {
+            document.removeEventListener("mousemove", move, false);
+        }
+        element.addEventListener("mousedown", down, false);
+    }
+
+    /* 画板 */
+    function world1() {
+
+        var scene, camera, renderer; // Three.js 渲染三要素 场景、相机、渲染器.
+
+        var cube; // 立方体，这个场景中唯一的物体。
+
+        var textureURLs = [ // 立方体映射的六个面的url
+            "https://down.om.cn/v3/Uploads/Pic/2017-12-28/40c713f0-eba6-11e7-b4c3-871dfc6f1e40.jpeg",
+            "https://down.om.cn/v3/Uploads/Pic/2017-12-28/5d86e750-eba6-11e7-aae1-03dacb0be6c0.jpeg",
+            "https://down.om.cn/v3/Uploads/Pic/2017-12-28/58675780-eba6-11e7-9132-792ccd17575d.jpeg",
+            "https://down.om.cn/v3/Uploads/Pic/2018-01-12/187a94428c81f7381c6c94326dfd1fb5.jpeg",
+            "https://down.om.cn/v3/Uploads/Pic/2018-01-05/4bfa0f30-f1d8-11e7-8612-8be0c0762cd5.jpeg",//   important.
+            "https://down.om.cn/v3/Uploads/Pic/2018-01-03/7d61e5f0-f033-11e7-b312-2923e29a0061.jpeg"
+        ];
+
+        var controls; //轨道控制，用来让用户用鼠标旋转立方体。
+
+        function render() {
+            controls.update(); // 从控制中应用任何变化。
+            renderer.render(scene, camera);
+        }
+
+        var width = document.getElementById('canvas-frame').clientWidth; // 获取对象可见的宽度，不包滚动条等边线，会随窗口的显示大小改变。
+        var height = document.getElementById('canvas-frame').clientHeight; // 获取高
+
+        renderer = new THREE.WebGLRenderer({
+            antialias: true
+        });
+        renderer.setSize(width, height); // 设置宽高
+        document.getElementById('canvas-frame').appendChild(renderer.domElement); // 将渲染生成的元素挂入dom树
+        renderer.setClearColor(0xf6f6f6, 1.0); // 设置画板颜色？
+
+        scene = new THREE.Scene(); // 实例化场景
+        camera = new THREE.PerspectiveCamera(45, width / height, 1, 1000); // 实例化透视相机
+
+        var light = new THREE.AmbientLight(); // 实例化环境光
+
+        scene.add(light);
+        scene.add(camera);
+        camera.position.z = 100;
+
+        /* 加载六张图像纹理并创建六个面材料 */
+        var textures = loadTextures(textureURLs, render);
+        var materials = [];
+        for (var i = 0; i < 6; i++) {
+            materials.push(new THREE.MeshPhongMaterial({
+                color: "white",
+                map: textures[i]
+            }));
+        }
+
+        /* 在立方体的六个面上创建一个立方体。 */
+        if (materials.length < 6) {
+
+        } else {
+            cube = new THREE.Mesh(new THREE.CubeGeometry(30, 30, 30), new THREE.MultiMaterial(materials));
+        }
+        // cube.rotateZ(-60);
+        cube.rotateY(-60);
+        cube.rotateX(-60);
+        scene.add(cube);
+
+        // 添加OrbitControls控件，这样用户就可以用鼠标旋转视图。
+        controls = new THREE.OrbitControls(camera);
+        // 当鼠标拖动时，添加另一个鼠标侦听器来更新视图。
+        setupDragAction(document.getElementById('canvas-frame'), render);
+        render();
+        return true;
+
+    }
+
+    world1();
+</script>
+</body>
+
+</html>
