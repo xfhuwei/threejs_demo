@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>OBJLoader2 基本用法</title>
+    <meta charset="utf-8">
+    <!--<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">-->
+
+    <style>
+        body {
+            font-family: Monospace;
+            background-color: #000;
+            color: #fff;
+            margin: 0 0 0 0;
+            padding: 0 0 0 0;
+            border: none;
+            cursor: default;
+        }
+        #info {
+            color: #fff;
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            z-index: 100;
+            display:block;
+        }
+        #info a {
+            color: #f00;
+            font-weight: bold;
+            text-decoration: underline;
+            cursor: pointer
+        }
+        #glFullscreen {
+            width: 100%;
+            height: 100vh;
+            min-width: 640px;
+            min-height: 360px;
+            position: relative;
+            overflow: hidden;
+            z-index: 0;
+        }
+        #example {
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background-color: #000000;
+        }
+        #feedback {
+            color: darkorange;
+        }
+        #dat {
+            user-select: none;
+            position: absolute;
+            left: 0;
+            top: 0;
+            z-Index: 200;
+        }
+    </style>
+
+</head>
+
+<body>
+<div id="glFullscreen">
+    <canvas id="example"></canvas>
+</div>
+<div id="dat">
+
+</div>
+<div id="info">
+    <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - OBJLoader2 direct loader test
+    <div id="feedback"></div>
+</div>
+
+<script src="js/three.83.js"></script>
+<script src="js/Detector.js"></script>
+<script src="js/controls/TrackballControls.js"></script>
+<script src="js/loaders/MTLLoader.js"></script>
+<script src="js/libs/dat.gui.min.js"></script>
+
+<script src="js/loaders/LoaderSupport.js"></script>
+<script src="js/loaders/OBJLoader2.js"></script>
+<script>
+
+    'use strict';
+
+    // objLoader2 例子自调
+    var OBJLoader2Example = (function () {
+
+        // 验证器
+        var Validator = THREE.LoaderSupport.Validator; // 创建一个验证器，即视图中的网格
+
+        function OBJLoader2Example( options ) { // 构造函数
+            this.options = options;
+            console.log(this.options);
+
+            this.renderer = null;           // 渲染器
+            this.canvas = options.ele;   // 画板
+            this.aspectRatio = 1;           // 方向比率 长宽比
+            this.recalcAspectRatio();        // 重新计算方向比率
+
+            this.scene = null;              // 场景
+            this.cameraDefaults = {         // 相机默认参数
+                posCamera: new THREE.Vector3( 0.0, 175.0, 500.0 ), // 相机位置
+                posCameraTarget: new THREE.Vector3( 0, 0, 0 ), // 相机目标位置
+                near: 0.1,
+                far: 10000,
+                fov: 45
+            };
+            this.camera = null;              // 相机
+            this.cameraTarget = this.cameraDefaults.posCameraTarget; // 相机目标原点？
+
+            this.controls = null; // 控制器
+        }
+
+        // 定义三要素 和光照
+        OBJLoader2Example.prototype.initGL = function () {
+            this.renderer = new THREE.WebGLRenderer( { // 实例化渲染器
+                canvas: this.canvas,
+                antialias: true,
+                autoClear: true // 定义渲染器在渲染帧之前是否应该自动清除它的输出。
+            } );
+            this.renderer.setClearColor( 0xeeeeee ); // 设置背景色
+
+            this.scene = new THREE.Scene(); // 实例化场景
+
+            this.camera = new THREE.PerspectiveCamera( this.cameraDefaults.fov, this.aspectRatio, this.cameraDefaults.near, this.cameraDefaults.far ); // 实例化相机（视角、 长宽比、 近平面、 远平面）
+            this.resetCamera(); // 重置更新相机
+            this.controls = new THREE.TrackballControls( this.camera, this.renderer.domElement ); // 轨迹球控制器？？？应该是鼠标操作事件
+
+            var ambientLight = new THREE.AmbientLight( 0x404040 ); // 环境光
+            var directionalLight1 = new THREE.DirectionalLight( 0xC0C090 ); // 方向光
+            var directionalLight2 = new THREE.DirectionalLight( 0xC0C090 );
+
+            directionalLight1.position.set( -100, -50, 100 );
+            directionalLight2.position.set( 100, 50, -100 );
+
+            this.scene.add( directionalLight1 );
+            this.scene.add( directionalLight2 );
+            this.scene.add( ambientLight );
+
+            var helper = new THREE.GridHelper( 1200, 60, 0xff0000, 0x404040 ); // 定义网格 （尺寸、一小格尺寸、中心线颜色、网格线颜色）
+            this.scene.add( helper );
+        };
+
+        // 加载物体内容
+        OBJLoader2Example.prototype.initContent = function () {
+            var modelName = this.options.name;
+            this._reportProgress( { detail: { text: 'Loading: ' + modelName } } ); // 进度
+
+            var scope = this;
+            var objLoader = new THREE.OBJLoader2();
+            var callbackOnLoad = function ( event ) {
+                scope.scene.add( event.detail.loaderRootNode );
+                console.log( 'Loading complete: ' + event.detail.modelName );
+                scope._reportProgress( { detail: { text: '' } } ); // 进度
+            };
+
+            var onLoadMtl = function ( materials ) {
+                objLoader.setModelName( modelName );
+                objLoader.setMaterials( materials );
+                objLoader.getLogger().setDebug( true );
+                objLoader.load( scope.options.obj, callbackOnLoad, null, null, null, false );
+            };
+            objLoader.loadMtl( scope.options.mtl, null, onLoadMtl );
+        };
+
+        OBJLoader2Example.prototype._reportProgress = function( event ) {  // 进度
+            var output = Validator.verifyInput( event.detail.text, '' );
+            console.log( 'Progress: ' + output );
+            document.getElementById( 'feedback' ).innerHTML = output;
+        };
+
+        OBJLoader2Example.prototype.resizeDisplayGL = function () { // 屏幕自适应
+            this.controls.handleResize();
+
+            this.recalcAspectRatio();
+            this.renderer.setSize( this.canvas.offsetWidth, this.canvas.offsetHeight, false );
+
+            this.updateCamera();
+        };
+
+        OBJLoader2Example.prototype.recalcAspectRatio = function () { // 更新宽高比
+            this.aspectRatio = ( this.canvas.offsetHeight === 0 ) ? 1 : this.canvas.offsetWidth / this.canvas.offsetHeight;
+        };
+
+        OBJLoader2Example.prototype.resetCamera = function () { // 重置相机
+            this.camera.position.copy( this.cameraDefaults.posCamera );
+            this.cameraTarget.copy( this.cameraDefaults.posCameraTarget );
+
+            this.updateCamera();
+        };
+
+        OBJLoader2Example.prototype.updateCamera = function () { // 更新相机
+            this.camera.aspect = this.aspectRatio;
+            this.camera.lookAt( this.cameraTarget );
+            this.camera.updateProjectionMatrix();
+        };
+
+        OBJLoader2Example.prototype.render = function () { // 正式渲染
+            if ( ! this.renderer.autoClear ) this.renderer.clear();
+            this.controls.update();
+            this.renderer.render( this.scene, this.camera );
+        };
+
+        return OBJLoader2Example;
+
+    })();
+
+    var app = new OBJLoader2Example({
+        ele: document.getElementById( 'example' ),
+        name: 'huwei',
+        mtl: 'models/car.mtl',
+        obj: 'models/car.obj'
+    });
+
+    var resizeWindow = function () {
+        app.resizeDisplayGL();
+    };
+
+    var render = function () {
+        requestAnimationFrame( render );
+        app.render();
+    };
+
+    window.addEventListener( 'resize', resizeWindow, false );
+
+    console.log( '开始加载...' );
+    app.initGL();
+    app.resizeDisplayGL();
+    app.initContent();
+
+    render();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>加载obj+贴图</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            margin: 0px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+
+<script src="js/three.83.js"></script>
+<script src="js/loaders/OBJLoader.js"></script>
+<!--<script src="js/Detector.js"></script>-->
+<!--<script src="js/loaders/OBJLoader.js"></script>-->
+<!--<script src="js/controls/TrackballControls.js"></script>-->
+<!--<script src="js/loaders/MTLLoader.js"></script>-->
+<!--<script src="js/libs/dat.gui.min.js"></script>-->
+<!--<script src="js/loaders/LoaderSupport.js"></script>-->
+<!--<script src="js/loaders/OBJLoader2.js"></script>-->
+<script>
+
+    var container; // 容器,渲染后的dom放入其中
+
+    var camera, scene, renderer; // 三要素：相机、场景、渲染器
+
+    var mouseX = 0, mouseY = 0; // x y 偏移量
+
+    var windowHalfX = window.innerWidth / 2;  // 文档显示区宽度一半
+    var windowHalfY = window.innerHeight / 2; // 文档显示区高度一半
+
+
+    init();  // 启动初始化函数
+    animate(); // 启动动画函数、重复渲染
+
+
+    function init() { // 初始化
+
+        container = document.createElement( 'div' ); // 创建div容器
+        document.body.appendChild( container ); // 将容器挂入dom数中
+
+        camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 ); // 实例化透视相机
+        camera.position.z = 1500; // 相机z位置
+
+        // scene 场景
+
+        scene = new THREE.Scene(); // 实例化场景
+
+        var ambientLight = new THREE.AmbientLight( 0xcccccc, 0.4 ); // 实例化环境光
+        scene.add( ambientLight );  // 将环境光加入场景中
+
+        var pointLight = new THREE.PointLight( 0xffffff, 0.8 ); // 实例化点光源
+        camera.add( pointLight ); // 将点光源加入相机中
+        scene.add( camera ); // 将相机也加入场景中
+
+        // texture 材质、纹理、贴图
+
+        var manager = new THREE.LoadingManager(); // 管理者、用于跟踪加载进度
+        manager.onProgress = function ( item, loaded, total ) {
+            // item   - 刚加载的项目的url。
+            // Loaded - 到目前为止已经加载的项目数量。
+            // Total  - 要加载的项目总数。
+            console.log( item, loaded, total );
+        };
+
+        var textureLoader = new THREE.TextureLoader( manager ); // 实例化纹理加载器
+        var texture = textureLoader.load( 'https://down.om.cn/v3/Uploads/Pic/2018-01-05/4bfa0f30-f1d8-11e7-8612-8be0c0762cd5.jpeg' ); // 载入贴图
+
+        // model 物体模型
+
+        var onProgress = function ( xhr ) { // 定义obj模型加载进度函数
+            if ( xhr.lengthComputable ) {
+                var percentComplete = xhr.loaded / xhr.total * 100;
+                console.log( Math.round(percentComplete, 2) + '% downloaded' );
+            }
+        };
+
+        var onError = function ( xhr ) { // 加载obj模型失败函数
+            console.log('load obj error');
+        };
+
+        var loader = new THREE.OBJLoader( manager ); // 实例化obj文件加载器
+        loader.load( '/threejs_demo/models/house_plant.obj', function ( object ) { // 加载obj文件
+            // 加载完成后的回调
+            object.traverse( function ( child ) { // 函数参数对每个子对象都调用一次函数，算是遍历吧
+                 // instanceof 通过返回一个布尔值来指出，这个对象是否是这个特定类或者是它的子类的一个实例。
+                if ( child instanceof THREE.Mesh ) { // 如果是网格类实例
+
+                    child.material.map = texture; // 将贴图放入材质的map中
+
+                }
+
+            } );
+
+            object.position.y = - 95; // obj物体 Y轴偏移量
+            scene.add( object ); // 将物体加入场景中
+
+        }, onProgress, onError );
+
+
+        // renderer 渲染器
+
+        renderer = new THREE.WebGLRenderer({ antialias: true }); // 实例化WebGL渲染器 并 加上抗锯齿参数
+        /*
+            window.devicePixelRatio是设备上物理像素和设备独立像素(device-independent pixels (dips))的比例。
+            公式表示就是：window.devicePixelRatio = 物理像素 / dips
+        */
+        renderer.setPixelRatio( window.devicePixelRatio ); // 设置像素比
+        renderer.setSize( window.innerWidth, window.innerHeight ); // 设置大小，这里设置为整个文档显示区
+        container.appendChild( renderer.domElement ); // 渲染输出的dom插入容器中
+
+        // 绑定事件
+        document.addEventListener( 'mousemove', onDocumentMouseMove, false ); // 监听鼠标移动事件
+        window.addEventListener( 'resize', onWindowResize, false ); // 监听浏览器窗口大小改变事件
+
+    }
+
+    function onWindowResize() { // 窗口大小改变事件函数
+
+        windowHalfX = window.innerWidth / 2;
+        windowHalfY = window.innerHeight / 2;
+
+        camera.aspect = window.innerWidth / window.innerHeight; // 替换相机平截头长宽比。
+        camera.updateProjectionMatrix(); // Camera 属性更改后,需调用 .updateProjectionMatrix() 以使更改生效。
+
+        renderer.setSize( window.innerWidth, window.innerHeight ); // 更改渲染大小
+
+    }
+
+    function onDocumentMouseMove( event ) { // 鼠标移动事件函数
+        // clientX/Y 鼠标指针 相对于浏览器页面 的坐标。
+        mouseX = ( event.clientX - windowHalfX ) / 2; //
+        mouseY = ( event.clientY - windowHalfY ) / 2;
+
+    }
+
+    //
+
+    function animate() { // 动画，即循环更新
+
+        // window.requestAnimationFrame() 执行动画 并 在下一次重绘之前 调用指定的函数来 更新动画。
+        // 预定器循环类似 一般每秒执行60次
+        requestAnimationFrame( animate );
+        render(); // 执行渲染函数
+
+    }
+
+    function render() { // 渲染函数
+
+        // 抖动相机
+        camera.position.x += ( mouseX - camera.position.x ) * .05;
+        camera.position.y += ( - mouseY - camera.position.y ) * .05;
+
+        camera.lookAt( scene.position ); // 相机看向场景所在的点
+
+        renderer.render( scene, camera ); // 把 场景 和相机 用渲染器 渲染
+
+    }
+
+</script>
+
+</body>
+</html>

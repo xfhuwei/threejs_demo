@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>加载经过blender的编译的js模型文件</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            padding:0;
+            margin:0;
+            overflow:hidden;
+            color: rgb(0.15, 0.15, 0.15)
+        }
+    </style>
+</head>
+<body>
+
+<div id="container"></div>
+
+<script src="js/three.min.js"></script>
+<script src="js/OrbitControls.js"></script>
+<script src="js/Detector.js"></script>
+<script src="js/libs/stats.min.js"></script>
+<script>
+
+
+    (function () {
+        if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+        var container, stats, camera, scene, renderer, controls;
+
+        function init () {
+            container = document.getElementById('container');
+
+            renderer = new THREE.WebGLRenderer( { antialias: true } );
+            renderer.setPixelRatio( window.devicePixelRatio );
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+//        renderer.setClearColor(0xFFFFFF, 1.0);
+
+            stats = new Stats();
+            container.appendChild( stats.dom );
+
+            camera = new THREE.PerspectiveCamera( 45, window.innerWidth/window.innerHeight, 1, 1000);
+            // 相机位置
+            camera.position.x = 83;
+            camera.position.y = 31;
+            camera.position.z = 75;
+
+            controls = new THREE.OrbitControls(camera);
+
+            scene = new THREE.Scene();
+
+            var ambientLight = new THREE.AmbientLight( 0xcccccc );
+            scene.add( ambientLight );
+            var pointLight = new THREE.PointLight( 0xff4400, 5, 30 );
+            pointLight.position.set( 5, 0, 0 );
+            scene.add( pointLight );
+
+            var helper = new THREE.GridHelper( 10000, 1000, 0xff0000, 0x808080 ); // 实例化网格1000 每小格50 网格颜色
+            scene.add( helper ); // 将网格放入场景中
+
+            var loader = new THREE.JSONLoader();
+            loader.load('models/ri.js', function (geometry, materials) {
+                console.log(geometry)
+                var object = new THREE.Mesh( geometry, materials );
+                scene.add(object);
+            });
+
+            window.addEventListener( 'resize', onWindowResize, false );
+            setupDragAction(container, render);
+        }
+
+        function setupDragAction(element, dragAction) {
+            function move() { dragAction(); }
+            function down() { document.addEventListener("mousemove", move, false); }
+            function up() { document.removeEventListener("mousemove", move, false); }
+            element.addEventListener("mousedown", down, false);
+        }
+        function onWindowResize( event ) {
+            renderer.setSize( window.innerWidth, window.innerHeight );
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        }
+
+        function render () {
+//        camera.position.y += 0.1;
+//        camera.position.z += 0.1;
+//        camera.position.x += 0.1;
+//            console.log(camera.position);
+            controls.update();
+            stats.update();
+            renderer.render(scene, camera);
+        }
+
+        function animation () {
+            render ()
+            requestAnimationFrame(animation);
+        }
+
+        init();
+        animation();
+
+    })();
+
+
+
+
+
+</script>
+</body>
+</html>

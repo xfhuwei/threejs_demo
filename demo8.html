@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>加载.obj模型</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body { padding: 0; margin: 0; overflow: hidden; }
+        .title { position: fixed; top: 0; right: 0; color: #fff; width: 300px; text-shadow: 2px 3px 5px hsl(0, 4%, 78%);
+ }
+        #loading { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(0,0,0,0.95); z-index: 10001; }
+        #loading span { color: #fff; font-size: 20px; font-weight: bold; text-align: center; display: block; padding-top: 50px; }
+    </style>
+</head>
+
+<body>
+    <div class="title">
+        <h3>加载 obj 模型，带 mtl 材质。</h3>
+        <p>注意：obj文件请控制在30M以内</p>
+    </div>
+    
+    <div id="loading"><span>正在加载<b id="progress"></b>，请稍后 . . .</span></div>
+
+    <div id="container"></div>
+
+    <script src="js/three.min.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/Detector.js"></script>
+    <script src="js/libs/stats.min.js"></script>
+
+    <script src="js/loaders/MTLLoader.js"></script>
+    <script src="js/loaders/LoaderSupport.js"></script>
+    <script src="js/loaders/OBJLoader2.js"></script>
+
+    <script>
+
+        window.onload = function () {
+            // Detector.js 浏览器兼容性检查
+            if (!Detector.webgl) Detector.addGetWebGLMessage();
+
+            // 定义：容器、性能监视器、相机、场景、渲染器、轨道控制器、灯光
+            var container, stats, camera, scene, renderer, controls;
+            // 定义灯光: 环境光、平行光、点光源
+            var ambientLight, directionalLight, pointLight;
+
+
+            // 事件监听：浏览器窗口大小改变
+            function onWindowResize(event) {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+            }
+
+            // 算出模型最大点与最小点的函数（传入object3D几何对象）
+            function calc_bb(obj) {
+                var minX = 0.0;
+                var minY = 0.0;
+                var minZ = 0.0;
+                var maxX = 0.0;
+                var maxY = 0.0;
+                var maxZ = 0.0;
+                var first = true;
+
+                obj.traverse(function (mesh) { // 遍历对象组
+                    if (mesh instanceof THREE.Mesh) { // 如果是网格类时
+                        mesh.geometry.computeBoundingBox(); // 计算几何边界最小点和最大点
+                        var bBox = mesh.geometry.boundingBox; // 获取几何边界点
+                        if (first) { // 第一个网格对象是直接赋值
+                            minX = bBox.min.x;
+                            minY = bBox.min.y;
+                            minZ = bBox.min.z;
+                            maxX = bBox.max.x;
+                            maxY = bBox.max.y;
+                            maxZ = bBox.max.z;
+
+                            first = false;
+                        } else { // 比较出每个网格对象最大最小点后赋值
+                            minX = Math.min(minX, bBox.min.x);
+                            minY = Math.min(minY, bBox.min.y);
+                            minZ = Math.min(minZ, bBox.min.z);
+                            maxX = Math.max(maxX, bBox.max.x);
+                            maxY = Math.max(maxY, bBox.max.y);
+                            maxZ = Math.max(maxZ, bBox.max.z);
+                        }
+                    }
+                });
+
+                var bb = { // 决出结果后定义整体的 最大最小点 与 大小差值点
+                    min: new THREE.Vector3(minX, minY, minZ),
+                    max: new THREE.Vector3(maxX, maxY, maxZ),
+                    dem: new THREE.Vector3(maxX - minX, maxY - minY, maxZ - minZ)
+                };
+                return bb; // 返回结果
+            }
+
+            // 绑定矩阵函数？ （传入object3D几何对象 和 矩阵4）
+            function apply_matrix(obj, mat) {
+                obj.traverse(function (child) {
+                    if (child instanceof THREE.Mesh) {
+                        // 将矩阵变换直接转换为顶点坐标。
+                        child.geometry.applyMatrix(mat);
+                    }
+                });
+            }
+
+            // 初始化主函数
+            function init() {
+                container = document.getElementById('container'); // 获取容器
+
+                // 渲染器
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setPixelRatio(window.devicePixelRatio); // 设置像素比、防止溢出画布
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                container.appendChild(renderer.domElement);
+                // renderer.setClearColor(0xFFFFFF, 1.0);
+
+                // 性能监视器
+                stats = new Stats();
+                container.appendChild(stats.dom);
+
+                // 透视相机
+                camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+                camera.position.x = 1.5;
+                camera.position.y = 1.0;
+                camera.position.z = 1.5;
+
+                // 轨道控制器
+                controls = new THREE.OrbitControls(camera);
+
+                // 场景
+                scene = new THREE.Scene();
+
+                // 灯光
+                ambientLight = new THREE.AmbientLight(0xf5f5f5); // 环境光
+                scene.add(ambientLight);
+                directionalLight = new THREE.DirectionalLight(0xfff1e0, 0.7); // 平行光
+                scene.add(directionalLight);
+                // var helper = new THREE.DirectionalLightHelper(directionalLight, 1); // 平行光辅助线
+                // scene.add(helper);
+                // pointLight = new THREE.PointLight( 0xfff1e0, 5, 30 );
+                // pointLight.position.set( 0, 0, 0 );
+                // scene.add( pointLight );
+
+
+                /** 加载 **/
+                var objLoader = new THREE.OBJLoader2(); // 实例化obj加载器
+                var mtl_path = 'models/house_plant.mtl'; // 加载路径
+                var obj_path = 'models/house_plant.obj'; // 加载路径
+
+                var onLoadMtl = function (materials) { // 材质加载完成后回调（返回材质集）
+                    // console.log(materials)
+                    objLoader.setMaterials(materials);
+                    // 注：模型文件请控制在 30M 以内，若文件过大材质过复杂，呈现会失败
+                    objLoader.load(obj_path, onLoadObj, onProgressObj, null, null, false); // 加载 .obj模型
+                };
+
+                var onLoadObj = function (event) { // 加载 .obj模型后的回调（返回object3D对象）
+                    // console.log(event)
+                    // 模型，顶点坐标，变换率，基点，矩阵
+                    var obj, bb, scale, center_pos, mat;
+
+
+                    obj = event.detail.loaderRootNode; // 获取 object3D
+
+                    /** 使用矩阵 位移、变换 obj对象 **/
+                    bb = calc_bb(obj); // 获取对象顶点
+                    // 1 除以 模型x,y,z高度差 算出缩放比例
+                    scale = 1 / Math.max(bb.dem.x, Math.max(bb.dem.y, bb.dem.z));
+                    // 基点坐标: 最大最小顶点x,y,z分别相加的一半取负值 （为了物体相对(0.0.0)在最中央）
+                    center_pos = new THREE.Vector3(-(bb.max.x + bb.min.x) * 0.5, -(bb.max.y + bb.min.y) * 0.5, -(bb.max.z + bb.min.z) * 0.5);
+                    // 实例化一个矩阵4、把这个矩阵参数按比例变换
+                    mat = new THREE.Matrix4().makeScale(scale, scale, scale);
+                    // 实例化一个矩阵4、把这个矩阵参数向基点平移？
+                    // 将mat与center_mat矩阵相乘返回mat
+                    mat.multiply(new THREE.Matrix4().makeTranslation(center_pos.x, center_pos.y, center_pos.z));
+                    // 关联 obj 与 矩阵，令对象变换
+                    apply_matrix(obj, mat);
+                    // console.log(obj);
+                    scene.add(obj); // 对象加入场景中
+
+                    
+
+                };
+
+                var onProgressObj = function (xhr) {
+                    // console.log(xhr)
+                    // console.log(xhr.loaded)
+                    // console.log(xhr.total)
+                    if ( xhr.lengthComputable ) {
+                        var percentComplete = xhr.loaded / xhr.total * 100;
+                        var dom = document.getElementById('progress');
+                        dom.innerHTML = Math.round(percentComplete, 2) + '%';
+                        if (percentComplete >= 100) {
+                            // 删除加载屏蔽框
+                            document.getElementById('loading').remove();
+                        }
+                    }
+
+                }
+
+                objLoader.setModelName('obj');          // 设置模型名称
+                objLoader.setDisregardNormals(true);    // 告诉我们法线是否应该被完全忽略和重新生成
+                objLoader.getLogger().setDebug(true);   // 返回LoaderSupport对象，启用调试日志记录
+                objLoader.loadMtl(mtl_path, null, onLoadMtl); // 加载材质（.mtl文件）
+
+
+                // 绑定窗口大小改变事件函数
+                window.addEventListener('resize', onWindowResize, false);
+                
+                var dir = new THREE.Vector3( 1, 2, 0 );
+
+                // 坐标轴
+                // var axesHelper = new THREE.AxesHelper( 5 );
+                // scene.add( axesHelper );
+
+                // 辅助网格
+                // var helper = new THREE.GridHelper(10, 30, 0xff0000, 0xffffff); // 实例化网格1000 每小格50 网格颜色
+                // scene.add(helper); // 将网格放入场景中
+                var helper = new THREE.PolarGridHelper( 1, 1, 4, 8 );
+                scene.add( helper );
+                var dir = new THREE.Vector3( 0, 1, 0 );
+                dir.normalize();
+                var origin = new THREE.Vector3( 0, 0, 0 );
+                var length = 1;
+                var hex = 0xeeeeee;
+                var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
+                scene.add( arrowHelper );
+
+            }
+
+
+
+            // 渲染一帧
+            function render() {
+                // camera.position.y += 0.1;
+                // camera.position.z += 0.1;
+                // camera.position.x += 0.1;
+                // console.log(camera.position);
+                controls.update();  // 更新轨道控制器
+                stats.update();     // 更新性能监视器
+                renderer.render(scene, camera);
+            }
+
+            // 动态渲染
+            function animation() {
+                render();
+                requestAnimationFrame(animation);
+            }
+
+            init();
+            animation();
+
+        };
+
+
+
+
+
+    </script>
+</body>
+
+</html>
