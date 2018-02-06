@@ -1,5 +1,5 @@
 # threejs_demo
-##three.js 例子
+## three.js 例子
 obj模型太大不上传了。
 
 #### demo1: 方体旋转
