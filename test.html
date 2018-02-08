@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- 移动相机的位置-->
+    <meta charset="UTF-8">
+    <title>方体旋转</title>
+    <script src="https://cdn.bootcss.com/three.js/r83/three.min.js"></script>
+
+    <style type="text/css">
+        div#canvas-frame {
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            height: 600px;
+            background-color: #EEEEEE;
+        }
+
+    </style>
+    <script>
+
+        var scene = new THREE.Scene();
+        var renderer = new THREE.WebGLRenderer();
+
+       //创建立方体相机
+var cubeCamera = new THREE.CubeCamera( 1, 100000, 128 );
+scene.add( cubeCamera );
+
+//创建汽车
+var chromeMaterial = new THREE.MeshLambertMaterial( { color: 0xffffff, envMap: cubeCamera.renderTarget } );
+var car = new THREE.Mesh( carGeometry, chromeMaterial );
+scene.add( car );
+
+//更新渲染目标立方体
+car.setVisible( false );
+cubeCamera.position.copy( car.position );
+cubeCamera.updateCubeMap( renderer, scene );
+
+//绘制场景
+car.setVisible( true );
+renderer.render( scene, camera );
+    </script>
+</head>
+
+<body onload="threeStart();">
+
+</body>
+</html>

@@ -1,0 +1,97 @@
+《手册》
+
+一、开始
+  1.场景 scene
+  2.矩阵变换 Matrix transformations
+
+二、常量 Constants
+  1.自定义混合方程 CustomBlendingEquation
+  2.GL状态 GLState
+  3.材料 Materials
+  4.阴影类型 ShadowingTypes
+  5.纹理 Textures
+
+三、相机 Cameras
+  1.相机 Camera
+  2.立方体相机 CubeCamera
+  3.正交相机 OrthographicCamera
+  4.远景相机 PerspectiveCamera
+  5.立体相机 StereoCamera
+
+四、核心模块 Core
+  1.缓存属性 BufferAttribute
+  2.缓存几何模型 BufferGeometry
+  3.时钟 Clock
+  4.事件分发器 EventDispatcher
+  5.三角面 Face3
+  6.几何模型 Geometry
+  7.3D对象 Object3D
+  8.光线投射器 Raycaster
+  9.转成缓存几何模型 DirectGeometry
+  10.实例缓存属性 InstancedBufferAttribute
+  11.实例缓存几何模型 InstancedBufferGeometry
+  12.实例交错缓存 InstancedInterleavedBuffer     
+  13.交错缓存 InterleavedBuffer
+  14.交错缓存属性 InterleavedBufferAttribute
+  15.图层 layers
+  16.统一 Uniform
+
+五、光照 Lights
+  1.环境光 AmbientLight
+  2.平行光 DirectionalLight
+  3.平行光阴影 DirectionalLightShadow
+  4.半球光源 HemisphereLight
+  5.光照 Light
+  6.光照阴影 LightShadow
+  7.点光源 PointLight
+  8.聚光光源 SpotLight
+  9.聚光阴影 SpotLigjtShadow
+  10.矩形光 RectAreaLight
+
+六、加载器 Loaders
+  1.音频加载器          AudioLoader
+  2.巴比伦加载器        BabylonLoader
+  3.缓存几何模型加载器   BufferGeometryLoader
+  4.高速缓存            Cache
+  5.Collada加载器       ColladaLoader
+  6.GLTF加载器          GLTFLoader
+  7.图像加载器          imageLoader
+  8.JSON加载器          JSONLoader
+  9.加载器              Loader
+  10.加载管理器         LoadingManager
+  11.材料加载器         MaterialLoader
+  12.MTL加载器          MTLLoader
+  13.OBJ加载器          OBJLoader
+  14.对象加载器         ObjectLoader
+  15.PDB加载器          PDBLoader
+  16.SVG加载器          SVGLoader
+  17.纹理加载器         TextureLoader
+  18.TGA加载器          TGALoader
+  19.XHR加载器          XHRLoader
+  20.动画加载器         AnimationLoader
+  21.压缩块纹理加载器    CompressedTextureLoader
+  22.立方体纹理加载器    CubeTextureLoader
+  23.数据纹理加载器      DataTextureLoader 
+  24.文件加载器          FileLoader
+  25.字体加载器          FontLoader
+  26.位图片加载器        ImageBitmapLoader
+  27.加载工具            LoaderUtils
+  28.默认加载管理器      DefaultLoadingManager
+  29.OBJ加载器2         OBJLoader2
+  30.加载港             LoaderSupport
+  31.PRWM加载器         PRWMLoader
+
+七、材料 Materials
+  1.基础线条材料   LineBasicMaterial
+  2.虚线材料       LineDashedMaterial
+  3.材料           Material
+  4.基础网孔材料    MeshBasicMaterial
+  5.深度网孔材料    MeshDepthMaterial
+  6.多种材料       MultiMaterial
+  7.兰伯特网孔材料  MeshLambertMaterial
+  8.Phong网孔材料  MeshPhoneMaterial
+  9.标准网孔材料    MeshStandardMaterial
+  10.点材料        PonitsMaterial
+  11.原始着色器材料 RawShaderMaterial
+  12.着色器材料     ShaderMaterial
+  13.精灵材料       SpriteMaterial
