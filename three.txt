@@ -95,3 +95,9 @@
   11.原始着色器材料 RawShaderMaterial
   12.着色器材料     ShaderMaterial
   13.精灵材料       SpriteMaterial
+  14.物理材料       MeshPhysicalMaterial
+  15.法向量网孔材料  MeshNormalMaterial
+  16.底纹网孔材料    MeshToonMaterial
+  17.新着色器材料    RawShaderMaterial
+  18.阴影材料        ShadowMaterial
+

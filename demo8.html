@@ -6,11 +6,39 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <style>
-        body { padding: 0; margin: 0; overflow: hidden; }
-        .title { position: fixed; top: 0; right: 0; color: #fff; width: 300px; text-shadow: 2px 3px 5px hsl(0, 4%, 78%);
- }
-        #loading { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(0,0,0,0.95); z-index: 10001; }
-        #loading span { color: #fff; font-size: 20px; font-weight: bold; text-align: center; display: block; padding-top: 50px; }
+        body {
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .title {
+            position: fixed;
+            top: 0;
+            right: 0;
+            color: #fff;
+            width: 300px;
+            text-shadow: 2px 3px 5px hsl(0, 4%, 78%);
+        }
+
+        #loading {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10001;
+        }
+
+        #loading span {
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            display: block;
+            padding-top: 50px;
+        }
     </style>
 </head>
 
@@ -19,8 +47,11 @@
         <h3>加载 obj 模型，带 mtl 材质。</h3>
         <p>注意：obj文件请控制在30M以内</p>
     </div>
-    
-    <div id="loading"><span>正在加载<b id="progress"></b>，请稍后 . . .</span></div>
+
+    <div id="loading">
+        <span>正在加载
+            <b id="progress"></b>，请稍后 . . .</span>
+    </div>
 
     <div id="container"></div>
 
@@ -127,6 +158,7 @@
 
                 // 轨道控制器
                 controls = new THREE.OrbitControls(camera);
+                controls.autoRotate = true;
 
                 // 场景
                 scene = new THREE.Scene();
@@ -145,8 +177,8 @@
 
                 /** 加载 **/
                 var objLoader = new THREE.OBJLoader2(); // 实例化obj加载器
-                var mtl_path = 'models/h.mtl'; // 加载路径
-                var obj_path = 'models/h.obj'; // 加载路径
+                var mtl_path = 'models/house_plant.mtl'; // 加载路径
+                var obj_path = 'models/house_plant.obj'; // 加载路径
 
                 var onLoadMtl = function (materials) { // 材质加载完成后回调（返回材质集）
                     // console.log(materials)
@@ -156,7 +188,7 @@
                 };
 
                 var onLoadObj = function (event) { // 加载 .obj模型后的回调（返回object3D对象）
-//                     console.log(event)
+                    //                     console.log(event)
                     // 模型，顶点坐标，变换率，基点，矩阵
                     var obj, bb, scale, center_pos, mat;
 
@@ -165,7 +197,8 @@
                     if (obj.children.length > 10) {
                         obj.traverse(function (child) {
                             if (child instanceof THREE.Mesh) {
-                                child.material = new THREE.MeshPhongMaterial({color: 0x999999});
+                                var texture = new THREE.TextureLoader().load("https://down.om.cn/v3/Uploads/Pic/2017-03-04/14208628241290135842.jpg");
+                                child.material = new THREE.MeshPhongMaterial( { color: 0xffffff, map: texture } );
                             }
                         });
                     }
@@ -186,15 +219,15 @@
                     // console.log(obj);
                     scene.add(obj); // 对象加入场景中
 
-                    
+                    document.getElementById('loading').remove();
 
                 };
 
                 var onProgressObj = function (xhr) {
-//                     console.log(xhr)
+                    //                     console.log(xhr)
                     // console.log(xhr.loaded)
                     // console.log(xhr.total)
-                    if ( xhr.lengthComputable ) {
+                    if (xhr.lengthComputable) {
                         var percentComplete = xhr.loaded / xhr.total * 100;
                         var dom = document.getElementById('progress');
                         dom.innerHTML = Math.round(percentComplete, 2) + '%';
@@ -214,8 +247,8 @@
 
                 // 绑定窗口大小改变事件函数
                 window.addEventListener('resize', onWindowResize, false);
-                
-                var dir = new THREE.Vector3( 1, 2, 0 );
+
+                var dir = new THREE.Vector3(1, 2, 0);
 
                 // 坐标轴
                 // var axesHelper = new THREE.AxesHelper( 5 );
@@ -224,16 +257,24 @@
                 // 辅助网格
                 // var helper = new THREE.GridHelper(10, 30, 0xff0000, 0xffffff); // 实例化网格1000 每小格50 网格颜色
                 // scene.add(helper); // 将网格放入场景中
-                var helper = new THREE.PolarGridHelper( 1, 1, 4, 8 );
-                scene.add( helper );
-                var dir = new THREE.Vector3( 0, 1, 0 );
+                var helper = new THREE.PolarGridHelper(1, 1, 4, 8);
+                scene.add(helper);
+                var dir = new THREE.Vector3(0, 1, 0);
                 dir.normalize();
-                var origin = new THREE.Vector3( 0, 0, 0 );
+                var origin = new THREE.Vector3(0, 0, 0);
                 var length = 1;
                 var hex = 0xeeeeee;
-                var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
-                scene.add( arrowHelper );
+                var arrowHelper = new THREE.ArrowHelper(dir, origin, length, hex);
+                scene.add(arrowHelper);
 
+               
+                var geometry = new THREE.SphereBufferGeometry( 1, 40, 40 );
+				var material = new THREE.MeshPhongMaterial( {
+					map: new THREE.TextureLoader().load( 'models/img/shi.jpeg' )
+				} );
+                var mesh1 = new THREE.Mesh( geometry, material );
+                mesh1.position.x = 5;
+				scene.add( mesh1 );
             }
 
 
